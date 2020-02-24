@@ -9,7 +9,9 @@ CPU_CORE_COUNT=2
 DISK_SIZE_GB=16
 BASE_DISK_FILE="base-disk.qcow2" # Backing file for the main image
 DISK_FILE="default.qcow2"        # The overlay disk file, used to boot
-PORT_FORWARDS="tcp::8888-:8080"  # List of portforwards in the Qemu format (TLDR: tcp/udp::HOST-:GUEST)
+PORT_FORWARDS="tcp::8888-:8080"  # List of portforwards in the Qemu format separated by spaces (TLDR: tcp/udp::HOST-:GUEST)
+USB_FILTER="-1:-1:-1:-1:1"       # List of allowed USB devices in the Qemu format separated by '|' characters
+OS_TYPE="linux"                  # Operating system type {linux|windows|other}
 
 # Default parameters
 QEMU_EXECUTABLE="/opt/qemu-4.2.0/x86_64-softmmu/qemu-system-x86_64"
@@ -126,9 +128,12 @@ ${QEMU_EXECUTABLE} \
   -device ich9-usb-uhci1,masterbus=usb.0,firstport=0,multifunction=on \
   -device ich9-usb-uhci2,masterbus=usb.0,firstport=2 \
   -device ich9-usb-uhci3,masterbus=usb.0,firstport=4 \
-  -chardev spicevmc,name=usbredir,id=usbredirchardev1 -device usb-redir,chardev=usbredirchardev1,id=usbredirdev1 \
-  -chardev spicevmc,name=usbredir,id=usbredirchardev2 -device usb-redir,chardev=usbredirchardev2,id=usbredirdev2 \
-  -chardev spicevmc,name=usbredir,id=usbredirchardev3 -device usb-redir,chardev=usbredirchardev3,id=usbredirdev3 \
+  -chardev spicevmc,name=usbredir,id=usbredirchardev1 \
+  -device usb-redir,filter="${USB_FILTER}",chardev=usbredirchardev1,id=usbredirdev1 \
+  -chardev spicevmc,name=usbredir,id=usbredirchardev2 \
+  -device usb-redir,filter="${USB_FILTER}",chardev=usbredirchardev2,id=usbredirdev2 \
+  -chardev spicevmc,name=usbredir,id=usbredirchardev3 \
+  -device usb-redir,filter="${USB_FILTER}",chardev=usbredirchardev3,id=usbredirdev3 \
   -object iothread,id=iothread0 \
   -device virtio-scsi-pci,id=scsi0,iothread=iothread0,num_queues=4 \
   -drive id=hd-scsi0,file=${DISK_FILE},if=none,format=qcow2,discard=unmap,detect-zeroes=unmap,aio=threads,cache=none \
