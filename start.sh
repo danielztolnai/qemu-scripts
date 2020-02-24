@@ -17,6 +17,9 @@ OS_TYPE="linux"                  # Operating system type {linux|windows|other}
 QEMU_EXECUTABLE="/opt/qemu-4.2.0/x86_64-softmmu/qemu-system-x86_64"
 CMD_BOOT="-boot c"         # Boot from the virtual disk by default
 QEMU_EXTRA_PARAMETERS=""   # No extra parameters by default
+VGA_TYPE="virtio"
+CPU_EXTRA_FLAGS=""
+MACHINE_EXTRA_FLAGS=""
 
 # Functions
 function usage() {
@@ -109,6 +112,31 @@ for i in ${PORT_FORWARDS}; do
     PORT_FORWARD_PARAMS+=",hostfwd=${i}"
 done
 
+# Process OS type
+case "${OS_TYPE}" in
+    windows|Windows|WINDOWS)
+        echo "Optimizing for Windows guest..."
+        VGA_TYPE="qxl"
+        CPU_EXTRA_FLAGS+=",hv_relaxed,hv_spinlocks=0x1fff,hv_vapic,hv_time"
+        MACHINE_EXTRA_FLAGS+=",type=pc,kernel_irqchip=on"
+        QEMU_EXTRA_PARAMETERS+=" -global PIIX4_PM.disable_s3=1 -global PIIX4_PM.disable_s4=1 "
+        ;;
+
+    *)
+        echo "Running with normal guest settings..."
+        ;;
+esac
+
+# Process ACPI and SMBIOS
+for i in *.acpi.bin; do
+    echo "Found acpi table file ${i}..."
+    QEMU_EXTRA_PARAMETERS+=" -acpitable file=${i} "
+done
+if [[ -f "smbios.bin" ]]; then
+    echo "Using custom smbios file..."
+    QEMU_EXTRA_PARAMETERS+=" -smbios file=smbios.bin "
+fi
+
 # Run sanity checks
 check_disk_files ${1}
 
@@ -116,14 +144,14 @@ check_disk_files ${1}
 sudo -g kvm \
 ${QEMU_EXECUTABLE} \
   -enable-kvm \
-  -machine accel=kvm \
+  -machine accel=kvm${MACHINE_EXTRA_FLAGS} \
   -accel accel=kvm,thread=multi \
   -smp cores=${CPU_CORE_COUNT},threads=1,sockets=1 \
   -m ${RAM_AMOUNT_MB} \
-  -cpu host \
+  -cpu host${CPU_EXTRA_FLAGS} \
   -net nic,model=virtio \
   -net user${PORT_FORWARD_PARAMS} \
-  -vga virtio \
+  -vga ${VGA_TYPE} \
   -display spice-app,gl=on \
   -device virtio-serial-pci \
   -device virtserialport,chardev=spicechannel0,name=com.redhat.spice.0 \
