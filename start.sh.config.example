@@ -1,0 +1,7 @@
+# Virtual machine parameters
+RAM_AMOUNT_MB=2048
+CPU_CORE_COUNT=2
+PORT_FORWARDS="tcp::8888-:8080"  # List of portforwards in the Qemu format separated by spaces (TLDR: tcp/udp::HOST-:GUEST)
+USB_FILTER="-1:-1:-1:-1:1"       # List of allowed USB devices in the Qemu format separated by '|' characters
+OS_TYPE="linux"                  # Operating system type {linux|windows|other}
+GVT_ENABLED="false"              # Enable Intel Graphics Virtualization (might need machine type q35)

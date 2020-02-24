@@ -7,19 +7,26 @@
 RAM_AMOUNT_MB=2048
 CPU_CORE_COUNT=2
 BASE_DISK_FILE="base-disk.qcow2" # Backing file for the main image
-DISK_FILE="default.qcow2"        # The overlay disk file, used to boot
 PORT_FORWARDS="tcp::8888-:8080"  # List of portforwards in the Qemu format separated by spaces (TLDR: tcp/udp::HOST-:GUEST)
 USB_FILTER="-1:-1:-1:-1:1"       # List of allowed USB devices in the Qemu format separated by '|' characters
 OS_TYPE="linux"                  # Operating system type {linux|windows|other}
 GVT_ENABLED="false"              # Enable Intel Graphics Virtualization (might need machine type q35)
 
 # Default parameters
+EXT_CONFIG_FILE="${0}.config"
 QEMU_EXECUTABLE="/opt/qemu-4.2.0/x86_64-softmmu/qemu-system-x86_64"
 CMD_BOOT="-boot c"         # Boot from the virtual disk by default
+DISK_FILE="default.qcow2"  # The overlay disk file, used to boot
 QEMU_EXTRA_PARAMETERS=""   # No extra parameters by default
 VGA_TYPE="virtio"
 CPU_EXTRA_FLAGS=""
 MACHINE_EXTRA_FLAGS=""
+
+# Source the config file
+if [[ -f "${EXT_CONFIG_FILE}"  ]]; then
+    echo "Reading config file ${EXT_CONFIG_FILE}..."
+    . "${EXT_CONFIG_FILE}"
+fi
 
 # Functions
 function usage() {
