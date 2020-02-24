@@ -6,7 +6,6 @@
 # Virtual machine parameters
 RAM_AMOUNT_MB=2048
 CPU_CORE_COUNT=2
-DISK_SIZE_GB=16
 BASE_DISK_FILE="base-disk.qcow2" # Backing file for the main image
 DISK_FILE="default.qcow2"        # The overlay disk file, used to boot
 PORT_FORWARDS="tcp::8888-:8080"  # List of portforwards in the Qemu format separated by spaces (TLDR: tcp/udp::HOST-:GUEST)
@@ -24,29 +23,36 @@ MACHINE_EXTRA_FLAGS=""
 
 # Functions
 function usage() {
-    echo "Initialization: ${0} init" >&2
+    echo "Initialization: ${0} init SIZE_IN_GB" >&2
     echo "Usage: ${0} NAME {cdrom FILE|snapshot|info|create}" >&2
     exit 1
 }
 
-function check_disk_files() {
+function check_base_disk_file() {
     if ! [[ -f "${BASE_DISK_FILE}" ]]; then
-        echo "ERROR! Base disk file missing, please use \"${0} init\" to fix the problem"
+        echo "ERROR! Base disk file missing, please use \"${0} init SIZE_IN_GB\" to fix the problem"
         exit 1
     fi
+}
+
+function check_overlay_disk_file() {
     if ! [[ -f "${DISK_FILE}" ]]; then
         echo "ERROR! Overlay disk file missing, use \"${0} ${1} create\" to fix the problem"
         exit 1
     fi
 }
 
-# Process command line parameters
+function get_base_disk_size() {
+    qemu-img info "${BASE_DISK_FILE}" | grep "virtual size" | grep -o -P '\([0-9]* bytes\)' | grep -o -P '[0-9]*'
+}
+
+# Process first command line parameter
 if ! [[ -z "${1}" ]]; then
     case "${1}" in
         # Initialize virtual machine
         init)
             if ! [[ -f "${BASE_DISK_FILE}" ]]; then
-                qemu-img create -f qcow2 -o cluster_size=2M "${BASE_DISK_FILE}" "${DISK_SIZE_GB}G"
+                qemu-img create -f qcow2 -o cluster_size=2M "${BASE_DISK_FILE}" "${2}G"
                 exit "${?}"
             else
                 echo "Base disk file ${BASE_DISK_FILE} already exists"
@@ -66,6 +72,10 @@ else
     usage
 fi
 
+# Base disk sanity check
+check_base_disk_file
+
+# Process rest of the command line parameters
 if ! [[ -z "${2}" ]]; then
     case "${2}" in
         # Boot from a cdrom image
@@ -93,7 +103,7 @@ if ! [[ -z "${2}" ]]; then
         # Create overlay disk file
         create)
             if ! [[ -f "${DISK_FILE}" ]]; then
-                qemu-img create -b "${BASE_DISK_FILE}" -f qcow2 -o cluster_size=2M "${DISK_FILE}" "${DISK_SIZE_GB}G"
+                qemu-img create -b "${BASE_DISK_FILE}" -f qcow2 -o cluster_size=2M "${DISK_FILE}" "$(get_base_disk_size)"
                 exit "${?}"
             else
                 echo "File ${DISK_FILE} already exists"
@@ -139,7 +149,7 @@ if [[ -f "smbios.bin" ]]; then
 fi
 
 # Run sanity checks
-check_disk_files ${1}
+check_overlay_disk_file ${1}
 
 # Check gvt-g
 if [[ "${GVT_ENABLED}" == "true" ]]; then
