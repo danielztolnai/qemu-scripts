@@ -12,6 +12,7 @@ DISK_FILE="default.qcow2"        # The overlay disk file, used to boot
 PORT_FORWARDS="tcp::8888-:8080"  # List of portforwards in the Qemu format separated by spaces (TLDR: tcp/udp::HOST-:GUEST)
 USB_FILTER="-1:-1:-1:-1:1"       # List of allowed USB devices in the Qemu format separated by '|' characters
 OS_TYPE="linux"                  # Operating system type {linux|windows|other}
+GVT_ENABLED="false"              # Enable Intel Graphics Virtualization (might need machine type q35)
 
 # Default parameters
 QEMU_EXECUTABLE="/opt/qemu-4.2.0/x86_64-softmmu/qemu-system-x86_64"
@@ -140,6 +141,27 @@ fi
 # Run sanity checks
 check_disk_files ${1}
 
+# Check gvt-g
+if [[ "${GVT_ENABLED}" == "true" ]]; then
+    echo "GVT enabled..."
+    GVT_DEVICE=$(sudo ./gvtg.sh create)
+    if [[ -d "${GVT_DEVICE}" ]]; then
+        echo "GVT-G detected, using card ${GVT_DEVICE}...";
+        QEMU_EXTRA_PARAMETERS+=" -device vfio-pci,sysfsdev=${GVT_DEVICE},x-igd-opregion=on,display=on "
+        # Run thread to change memlock limit
+        (
+            while ! QEMU_PID=$(pidof -s qemu-system-x86_64); do
+                sleep 0.1
+            done
+            sudo prlimit --memlock=unlimited:unlimited -p "${QEMU_PID}"
+            echo "MEMLOCK limit raised successfully..."
+        )&
+    else
+        echo "GVT-G error."
+        exit 1
+    fi
+fi
+
 # Run the virtual machine
 sudo -g kvm \
 ${QEMU_EXECUTABLE} \
@@ -172,3 +194,9 @@ ${QEMU_EXECUTABLE} \
   -device scsi-hd,drive=hd-scsi0 \
   ${QEMU_EXTRA_PARAMETERS} \
   ${CMD_BOOT}
+
+# Remove gvt-g
+if [[ "${GVT_ENABLED}" == "true" ]]; then
+    echo "Removing gvt-g device..."
+    sudo ./gvtg.sh remove
+fi
