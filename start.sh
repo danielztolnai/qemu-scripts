@@ -51,7 +51,11 @@ if ! [[ -z "${1}" ]]; then
             ;;
 
         *)
-            DISK_FILE="${1}.qcow2"
+            if [[ "${1}" =~ ^.*\.qcow2$ ]]; then
+                DISK_FILE="${1}"
+            else
+                DISK_FILE="${1}.qcow2"
+            fi
             ;;
     esac
 else
