@@ -140,6 +140,7 @@ esac
 
 # Process ACPI and SMBIOS
 for i in *.acpi.bin; do
+    [ -e "${i}" ] || [ -L "${i}" ] || continue
     echo "Found acpi table file ${i}..."
     QEMU_EXTRA_PARAMETERS+=" -acpitable file=${i} "
 done
