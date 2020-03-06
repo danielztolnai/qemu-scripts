@@ -137,7 +137,7 @@ case "${OS_TYPE}" in
         VGA_TYPE="qxl"
         CPU_EXTRA_FLAGS+=",hv_relaxed,hv_spinlocks=0x1fff,hv_vapic,hv_time"
         MACHINE_EXTRA_FLAGS+=",type=pc,kernel_irqchip=on"
-        QEMU_EXTRA_PARAMETERS+=" -global PIIX4_PM.disable_s3=1 -global PIIX4_PM.disable_s4=1 "
+        QEMU_EXTRA_PARAMETERS+=" -global PIIX4_PM.disable_s3=1 -global PIIX4_PM.disable_s4=1 -rtc base=localtime "
         ;;
 
     *)
