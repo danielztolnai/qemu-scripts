@@ -6,3 +6,8 @@ USB_FILTER="-1:-1:-1:-1:1"       # List of allowed USB devices in the Qemu forma
 OS_TYPE="linux"                  # Operating system type {linux|windows|other}
 GVT_ENABLED="false"              # Enable Intel Graphics Virtualization (might need machine type q35)
 AUDIO_ENABLED="false"            # Enable audio device access throught PulseAudio
+
+# Example for a machine specific configuration
+machine_config_NAME() {
+    RAM_AMOUNT_MB=4096
+}

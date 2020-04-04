@@ -17,6 +17,7 @@ AUDIO_ENABLED="false"            # Enable audio device access throught PulseAudi
 EXT_CONFIG_FILE="${0}.config"
 QEMU_EXECUTABLE="/opt/qemu-4.2.0/x86_64-softmmu/qemu-system-x86_64"
 CMD_BOOT="-boot c"         # Boot from the virtual disk by default
+NAME="default"             # The virtual machine's name
 DISK_FILE="default.qcow2"  # The overlay disk file, used to boot
 QEMU_EXTRA_PARAMETERS=""   # No extra parameters by default
 VGA_TYPE="virtio"
@@ -71,13 +72,23 @@ if ! [[ -z "${1}" ]]; then
         *)
             if [[ "${1}" =~ ^.*\.qcow2$ ]]; then
                 DISK_FILE="${1}"
+                NAME="$(rev <<< ${1} | cut -d '.' -f 2- | rev)"
             else
                 DISK_FILE="${1}.qcow2"
+                NAME="${1}"
             fi
             ;;
     esac
 else
     usage
+fi
+
+# Read machine specific config
+VM_CONFIG_FUNCTION="machine_config_${NAME}"
+VM_CONFIG_TYPE=$(type -t "${VM_CONFIG_FUNCTION}")
+if [[ "${VM_CONFIG_TYPE}" == "function" ]]; then
+    echo "Setting machine specific options for ${NAME}..."
+    ${VM_CONFIG_FUNCTION}
 fi
 
 # Base disk sanity check
