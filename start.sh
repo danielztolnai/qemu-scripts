@@ -11,6 +11,7 @@ PORT_FORWARDS="tcp::8888-:8080"  # List of portforwards in the Qemu format separ
 USB_FILTER="-1:-1:-1:-1:1"       # List of allowed USB devices in the Qemu format separated by '|' characters
 OS_TYPE="linux"                  # Operating system type {linux|windows|other}
 GVT_ENABLED="false"              # Enable Intel Graphics Virtualization (might need machine type q35)
+AUDIO_ENABLED="false"            # Enable audio device access throught PulseAudio
 
 # Default parameters
 EXT_CONFIG_FILE="${0}.config"
@@ -158,6 +159,12 @@ fi
 
 # Run sanity checks
 check_overlay_disk_file ${1}
+
+# Process audio
+if [[ "${AUDIO_ENABLED}" == "true" ]]; then
+    PA_SOCKET=$(eval $(pax11publish -i); echo ${PULSE_SERVER})
+    QEMU_EXTRA_PARAMETERS+=" -device ich9-intel-hda -device hda-micro,audiodev=hda -audiodev pa,id=hda,server=${PA_SOCKET} "
+fi
 
 # Check gvt-g
 if [[ "${GVT_ENABLED}" == "true" ]]; then
