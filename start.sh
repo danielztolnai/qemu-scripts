@@ -12,6 +12,7 @@ USB_FILTER="-1:-1:-1:-1:0"       # List of allowed USB devices in the Qemu forma
 OS_TYPE="linux"                  # Operating system type {linux|windows|other}
 GVT_ENABLED="false"              # Enable Intel Graphics Virtualization (might need machine type q35)
 AUDIO_ENABLED="false"            # Enable audio device access throught PulseAudio
+VIDEO_ENABLED="false"            # Enable video device access via USB passthrough
 
 # Default parameters
 EXT_CONFIG_FILE="${0}.config"
@@ -53,6 +54,25 @@ function check_overlay_disk_file() {
 
 function get_base_disk_size() {
     qemu-img info "${BASE_DISK_FILE}" | grep "virtual size" | grep -o -P '\([0-9]* bytes\)' | grep -o -P '[0-9]*'
+}
+
+function get_video_device() {
+    PATH_VIDEO="/sys/class/video4linux"
+
+    if [[ -z "${1}" ]]; then
+        VIDEO_DEV="${PATH_VIDEO}/$(ls -1 ${PATH_VIDEO} 2>/dev/null | head -n1)"
+    else
+        VIDEO_DEV="${PATH_VIDEO}/${1}"
+    fi
+
+    FILE_PATH_PID="${VIDEO_DEV}/device/../idProduct"
+    FILE_PATH_VID="${VIDEO_DEV}/device/../idVendor"
+    if [[ ! -f "${FILE_PATH_PID}" ]] || [[ ! -f "${FILE_PATH_VID}" ]]; then
+        return 1
+    fi
+
+    echo "0x$(cat ${FILE_PATH_VID}):0x$(cat ${FILE_PATH_PID})"
+    return 0
 }
 
 # Process first command line parameter
@@ -175,6 +195,13 @@ check_overlay_disk_file ${1}
 if [[ "${AUDIO_ENABLED}" == "true" ]]; then
     PA_SOCKET=$(eval $(pax11publish -i); echo ${PULSE_SERVER})
     QEMU_EXTRA_PARAMETERS+=" -device ich9-intel-hda -device hda-micro,audiodev=hda -audiodev pa,id=hda,server=${PA_SOCKET} "
+fi
+
+# Process video
+if [[ "${VIDEO_ENABLED}" == "true" ]]; then
+    if VIDEO_ENABLED_DEVICE=$(get_video_device); then
+        USB_FILTER="-1:${VIDEO_ENABLED_DEVICE}:-1:1|${USB_FILTER}"
+    fi
 fi
 
 # Check gvt-g
