@@ -14,6 +14,7 @@ GVT_ENABLED="false"              # Enable Intel Graphics Virtualization (might n
 AUDIO_ENABLED="false"            # Enable audio device access throught PulseAudio
 VIDEO_ENABLED="false"            # Enable video device access via USB passthrough
 SHARED_FOLDER=""                 # Path to shared folder using virtio-fs
+HEADLESS="false"                 # Run in headless mode
 
 # Default parameters
 EXT_CONFIG_FILE="${0}.config"
@@ -31,6 +32,7 @@ CPU_EXTRA_FLAGS=""
 MACHINE_EXTRA_FLAGS=""
 MEMORY_EXTRA_FLAGS=""
 QEMU_WRAPPER=""
+DISPLAY_TYPE="spice-app,gl=on"
 
 # Source the config file
 if [[ -f "${EXT_CONFIG_FILE}"  ]]; then
@@ -249,6 +251,25 @@ if [[ "${SHARED_FOLDER}" != "" ]]; then
     MEMORY_EXTRA_FLAGS+="-object memory-backend-file,id=mem,size=${RAM_AMOUNT_MB}M,mem-path=/dev/shm,share=on -numa node,memdev=mem"
 fi
 
+# Check for headless mode
+if [[ "${HEADLESS}" == "true" ]]; then
+    DISPLAY_TYPE="none"
+else
+    QEMU_EXTRA_PARAMETERS+=" -device virtio-serial-pci "
+    QEMU_EXTRA_PARAMETERS+=" -device virtserialport,chardev=spicechannel0,name=com.redhat.spice.0 "
+    QEMU_EXTRA_PARAMETERS+=" -chardev spicevmc,id=spicechannel0,name=vdagent "
+    QEMU_EXTRA_PARAMETERS+=" -device ich9-usb-ehci1,id=usb "
+    QEMU_EXTRA_PARAMETERS+=" -device ich9-usb-uhci1,masterbus=usb.0,firstport=0,multifunction=on "
+    QEMU_EXTRA_PARAMETERS+=" -device ich9-usb-uhci2,masterbus=usb.0,firstport=2 "
+    QEMU_EXTRA_PARAMETERS+=" -device ich9-usb-uhci3,masterbus=usb.0,firstport=4 "
+    QEMU_EXTRA_PARAMETERS+=" -chardev spicevmc,name=usbredir,id=usbredirchardev1 "
+    QEMU_EXTRA_PARAMETERS+=" -device usb-redir,filter=${USB_FILTER},chardev=usbredirchardev1,id=usbredirdev1 "
+    QEMU_EXTRA_PARAMETERS+=" -chardev spicevmc,name=usbredir,id=usbredirchardev2 "
+    QEMU_EXTRA_PARAMETERS+=" -device usb-redir,filter=${USB_FILTER},chardev=usbredirchardev2,id=usbredirdev2 "
+    QEMU_EXTRA_PARAMETERS+=" -chardev spicevmc,name=usbredir,id=usbredirchardev3 "
+    QEMU_EXTRA_PARAMETERS+=" -device usb-redir,filter=${USB_FILTER},chardev=usbredirchardev3,id=usbredirdev3 "
+fi
+
 # Run the virtual machine
 ${QEMU_WRAPPER} ${QEMU_EXECUTABLE} \
   -enable-kvm \
@@ -259,20 +280,7 @@ ${QEMU_WRAPPER} ${QEMU_EXECUTABLE} \
   -net nic,model=virtio \
   -net user${PORT_FORWARD_PARAMS} \
   -vga ${VGA_TYPE} \
-  -display spice-app,gl=on \
-  -device virtio-serial-pci \
-  -device virtserialport,chardev=spicechannel0,name=com.redhat.spice.0 \
-  -chardev spicevmc,id=spicechannel0,name=vdagent \
-  -device ich9-usb-ehci1,id=usb \
-  -device ich9-usb-uhci1,masterbus=usb.0,firstport=0,multifunction=on \
-  -device ich9-usb-uhci2,masterbus=usb.0,firstport=2 \
-  -device ich9-usb-uhci3,masterbus=usb.0,firstport=4 \
-  -chardev spicevmc,name=usbredir,id=usbredirchardev1 \
-  -device usb-redir,filter="${USB_FILTER}",chardev=usbredirchardev1,id=usbredirdev1 \
-  -chardev spicevmc,name=usbredir,id=usbredirchardev2 \
-  -device usb-redir,filter="${USB_FILTER}",chardev=usbredirchardev2,id=usbredirdev2 \
-  -chardev spicevmc,name=usbredir,id=usbredirchardev3 \
-  -device usb-redir,filter="${USB_FILTER}",chardev=usbredirchardev3,id=usbredirdev3 \
+  -display ${DISPLAY_TYPE} \
   -object iothread,id=iothread0 \
   -device virtio-scsi-pci,id=scsi0,iothread=iothread0,num_queues=4 \
   -drive id=hd-scsi0,file=${DISK_FILE},if=none,format=qcow2,discard=unmap,detect-zeroes=unmap,aio=threads,cache=none \
