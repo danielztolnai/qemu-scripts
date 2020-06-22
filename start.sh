@@ -13,6 +13,7 @@ OS_TYPE="linux"                  # Operating system type {linux|windows|other}
 GVT_ENABLED="false"              # Enable Intel Graphics Virtualization (might need machine type q35)
 AUDIO_ENABLED="false"            # Enable audio device access throught PulseAudio
 VIDEO_ENABLED="false"            # Enable video device access via USB passthrough
+SHARED_FOLDER=""                 # Path to shared folder using virtio-fs
 
 # Default parameters
 EXT_CONFIG_FILE="${0}.config"
@@ -20,6 +21,7 @@ SUDO_KVM="false"
 QEMU_BASEDIR="/opt/qemu-5.0.0"
 QEMU_EXECUTABLE="${QEMU_BASEDIR}/x86_64-softmmu/qemu-system-x86_64"
 QEMU_IMG="${QEMU_BASEDIR}/qemu-img"
+QEMU_VIRTIOFSD="${QEMU_BASEDIR}/virtiofsd"
 CMD_BOOT="-boot c"         # Boot from the virtual disk by default
 NAME="default"             # The virtual machine's name
 DISK_FILE="default.qcow2"  # The overlay disk file, used to boot
@@ -27,6 +29,7 @@ QEMU_EXTRA_PARAMETERS=""   # No extra parameters by default
 VGA_TYPE="virtio"
 CPU_EXTRA_FLAGS=""
 MACHINE_EXTRA_FLAGS=""
+MEMORY_EXTRA_FLAGS=""
 QEMU_WRAPPER=""
 
 # Source the config file
@@ -234,12 +237,24 @@ if [[ "${SUDO_KVM}" == "true" ]]; then
     QEMU_WRAPPER="sudo -g kvm"
 fi
 
+# Process shared folders
+if [[ "${SHARED_FOLDER}" != "" ]]; then
+    VIRTIOFS_SOCKET="$(dirname ${0})/sock-virtiofs"
+
+    sudo ${QEMU_VIRTIOFSD} --socket-path="${VIRTIOFS_SOCKET}" -o source="${SHARED_FOLDER}" &
+    sudo chown "$(whoami):$(whoami)" "${VIRTIOFS_SOCKET}"
+
+    QEMU_EXTRA_PARAMETERS+=" -chardev socket,id=virtiofs0,path=${VIRTIOFS_SOCKET} "
+    QEMU_EXTRA_PARAMETERS+=" -device vhost-user-fs-pci,queue-size=1024,chardev=virtiofs0,tag=myfs "
+    MEMORY_EXTRA_FLAGS+="-object memory-backend-file,id=mem,size=${RAM_AMOUNT_MB}M,mem-path=/dev/shm,share=on -numa node,memdev=mem"
+fi
+
 # Run the virtual machine
 ${QEMU_WRAPPER} ${QEMU_EXECUTABLE} \
   -enable-kvm \
   -machine accel=kvm${MACHINE_EXTRA_FLAGS} \
   -smp cores=${CPU_CORE_COUNT},threads=1,sockets=1 \
-  -m ${RAM_AMOUNT_MB} \
+  -m ${RAM_AMOUNT_MB} ${MEMORY_EXTRA_FLAGS}\
   -cpu host${CPU_EXTRA_FLAGS} \
   -net nic,model=virtio \
   -net user${PORT_FORWARD_PARAMS} \
