@@ -7,6 +7,7 @@ OS_TYPE="linux"                  # Operating system type {linux|windows|other}
 GVT_ENABLED="false"              # Enable Intel Graphics Virtualization (might need machine type q35)
 AUDIO_ENABLED="false"            # Enable audio device access throught PulseAudio
 VIDEO_ENABLED="false"            # Enable video device access via USB passthrough
+SUDO_KVM="false"                 # Do not assume the KVM group using sudo
 
 # Example for a machine specific configuration
 machine_config_NAME() {

@@ -16,6 +16,7 @@ VIDEO_ENABLED="false"            # Enable video device access via USB passthroug
 
 # Default parameters
 EXT_CONFIG_FILE="${0}.config"
+SUDO_KVM="false"
 QEMU_BASEDIR="/opt/qemu-5.0.0"
 QEMU_EXECUTABLE="${QEMU_BASEDIR}/x86_64-softmmu/qemu-system-x86_64"
 QEMU_IMG="${QEMU_BASEDIR}/qemu-img"
@@ -26,6 +27,7 @@ QEMU_EXTRA_PARAMETERS=""   # No extra parameters by default
 VGA_TYPE="virtio"
 CPU_EXTRA_FLAGS=""
 MACHINE_EXTRA_FLAGS=""
+QEMU_WRAPPER=""
 
 # Source the config file
 if [[ -f "${EXT_CONFIG_FILE}"  ]]; then
@@ -227,9 +229,13 @@ if [[ "${GVT_ENABLED}" == "true" ]]; then
     fi
 fi
 
+# Check if kvm group is needed
+if [[ "${SUDO_KVM}" == "true" ]]; then
+    QEMU_WRAPPER="sudo -g kvm"
+fi
+
 # Run the virtual machine
-sudo -g kvm \
-${QEMU_EXECUTABLE} \
+${QEMU_WRAPPER} ${QEMU_EXECUTABLE} \
   -enable-kvm \
   -machine accel=kvm${MACHINE_EXTRA_FLAGS} \
   -smp cores=${CPU_CORE_COUNT},threads=1,sockets=1 \
