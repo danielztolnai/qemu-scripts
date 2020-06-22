@@ -16,7 +16,9 @@ VIDEO_ENABLED="false"            # Enable video device access via USB passthroug
 
 # Default parameters
 EXT_CONFIG_FILE="${0}.config"
-QEMU_EXECUTABLE="/opt/qemu-4.2.0/x86_64-softmmu/qemu-system-x86_64"
+QEMU_BASEDIR="/opt/qemu-5.0.0"
+QEMU_EXECUTABLE="${QEMU_BASEDIR}/x86_64-softmmu/qemu-system-x86_64"
+QEMU_IMG="${QEMU_BASEDIR}/qemu-img"
 CMD_BOOT="-boot c"         # Boot from the virtual disk by default
 NAME="default"             # The virtual machine's name
 DISK_FILE="default.qcow2"  # The overlay disk file, used to boot
@@ -53,7 +55,7 @@ function check_overlay_disk_file() {
 }
 
 function get_base_disk_size() {
-    qemu-img info "${BASE_DISK_FILE}" | grep "virtual size" | grep -o -P '\([0-9]* bytes\)' | grep -o -P '[0-9]*'
+    ${QEMU_IMG} info "${BASE_DISK_FILE}" | grep "virtual size" | grep -o -P '\([0-9]* bytes\)' | grep -o -P '[0-9]*'
 }
 
 function get_video_device() {
@@ -81,7 +83,7 @@ if ! [[ -z "${1}" ]]; then
         # Initialize virtual machine
         init)
             if ! [[ -f "${BASE_DISK_FILE}" ]]; then
-                qemu-img create -f qcow2 -o cluster_size=2M "${BASE_DISK_FILE}" "${2}G"
+                ${QEMU_IMG} create -f qcow2 -o cluster_size=2M "${BASE_DISK_FILE}" "${2}G"
                 exit "${?}"
             else
                 echo "Base disk file ${BASE_DISK_FILE} already exists"
@@ -135,14 +137,14 @@ if ! [[ -z "${2}" ]]; then
 
         # Show disk information
         info|status)
-            qemu-img info "${DISK_FILE}"
+            ${QEMU_IMG} info "${DISK_FILE}"
             exit 0
             ;;
 
         # Create overlay disk file
         create)
             if ! [[ -f "${DISK_FILE}" ]]; then
-                qemu-img create -b "${BASE_DISK_FILE}" -f qcow2 -o cluster_size=2M "${DISK_FILE}" "$(get_base_disk_size)"
+                ${QEMU_IMG} create -b "${BASE_DISK_FILE}" -f qcow2 -o cluster_size=2M "${DISK_FILE}" "$(get_base_disk_size)"
                 exit "${?}"
             else
                 echo "File ${DISK_FILE} already exists"
@@ -230,7 +232,6 @@ sudo -g kvm \
 ${QEMU_EXECUTABLE} \
   -enable-kvm \
   -machine accel=kvm${MACHINE_EXTRA_FLAGS} \
-  -accel accel=kvm,thread=multi \
   -smp cores=${CPU_CORE_COUNT},threads=1,sockets=1 \
   -m ${RAM_AMOUNT_MB} \
   -cpu host${CPU_EXTRA_FLAGS} \

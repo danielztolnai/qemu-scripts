@@ -1,13 +1,8 @@
 #!/bin/bash
-QEMU_VERSION="qemu-4.2.0"
+QEMU_VERSION="qemu-5.0.0"
 QEMU_FILE="${QEMU_VERSION}.tar.xz"
 
 # Install requirements
-LIBPULSE_DEB="libpulse-dev_11.1-1ubuntu7.5_amd64.deb"
-wget "http://archive.ubuntu.com/ubuntu/ubuntu/pool/main/p/pulseaudio/${LIBPULSE_DEB}"
-sudo dpkg -i "${LIBPULSE_DEB}"
-rm "${LIBPULSE_DEB}"
-
 sudo apt-get install \
     libsdl2-dev \
     libpixman-1-dev \
@@ -18,7 +13,9 @@ sudo apt-get install \
     libvirglrenderer-dev \
     libusbredirhost-dev \
     libusbredirparser-dev \
-    libusb-1.0-0-dev
+    libusb-1.0-0-dev \
+    libcap-ng-dev \
+    libseccomp-dev
 
 # Download QEMU sources
 wget "https://download.qemu.org/${QEMU_FILE}"
@@ -28,6 +25,8 @@ cd "${QEMU_VERSION}"
 
 # Configure & build
 ./configure \
+    --enable-membarrier \
+    --enable-cap-ng \
     --enable-sdl \
     --enable-opengl \
     --enable-virglrenderer \
@@ -38,6 +37,9 @@ cd "${QEMU_VERSION}"
     --enable-kvm \
     --enable-spice \
     --enable-usb-redir \
-    --enable-libusb
+    --enable-libusb \
+    --enable-tools \
+    --enable-seccomp \
+    --enable-vhost-user
 
 make -j$(nproc)
