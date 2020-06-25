@@ -244,6 +244,10 @@ if [[ "${SHARED_FOLDER}" != "" ]]; then
     VIRTIOFS_SOCKET="$(dirname ${0})/sock-virtiofs"
 
     sudo ${QEMU_VIRTIOFSD} --socket-path="${VIRTIOFS_SOCKET}" -o source="${SHARED_FOLDER}" &
+    VIRTIOFS_PID="$!"
+    while ! pgrep -P "${VIRTIOFS_PID}" > /dev/null; do
+        sleep 0.5
+    done
     sudo chown "$(whoami):$(whoami)" "${VIRTIOFS_SOCKET}"
 
     QEMU_EXTRA_PARAMETERS+=" -chardev socket,id=virtiofs0,path=${VIRTIOFS_SOCKET} "
