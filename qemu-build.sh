@@ -1,5 +1,5 @@
 #!/bin/bash
-QEMU_VERSION="qemu-5.0.0"
+QEMU_VERSION="qemu-6.0.0"
 QEMU_FILE="${QEMU_VERSION}.tar.xz"
 
 # Install requirements

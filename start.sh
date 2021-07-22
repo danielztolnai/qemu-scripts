@@ -19,10 +19,10 @@ HEADLESS="false"                 # Run in headless mode
 # Default parameters
 EXT_CONFIG_FILE="${0}.config"
 SUDO_KVM="false"
-QEMU_BASEDIR="/opt/qemu-5.0.0"
-QEMU_EXECUTABLE="${QEMU_BASEDIR}/x86_64-softmmu/qemu-system-x86_64"
-QEMU_IMG="${QEMU_BASEDIR}/qemu-img"
-QEMU_VIRTIOFSD="${QEMU_BASEDIR}/virtiofsd"
+QEMU_BASEDIR="/opt/qemu-6.0.0"
+QEMU_EXECUTABLE="${QEMU_BASEDIR}/build/x86_64-softmmu/qemu-system-x86_64"
+QEMU_IMG="${QEMU_BASEDIR}/build/qemu-img"
+QEMU_VIRTIOFSD="${QEMU_BASEDIR}/build/tools/virtiofsd/virtiofsd"
 CMD_BOOT="-boot c"         # Boot from the virtual disk by default
 NAME="default"             # The virtual machine's name
 DISK_FILE="default.qcow2"  # The overlay disk file, used to boot
