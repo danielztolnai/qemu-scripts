@@ -253,7 +253,8 @@ if [[ "${SHARED_FOLDER}" != "" ]]; then
 
     QEMU_EXTRA_PARAMETERS+=" -chardev socket,id=virtiofs0,path=${VIRTIOFS_SOCKET} "
     QEMU_EXTRA_PARAMETERS+=" -device vhost-user-fs-pci,queue-size=1024,chardev=virtiofs0,tag=myfs "
-    MEMORY_EXTRA_FLAGS+="-object memory-backend-file,id=mem,size=${RAM_AMOUNT},mem-path=/dev/shm,share=on -numa node,memdev=mem"
+    MEMORY_EXTRA_FLAGS+="-object memory-backend-file,id=mem,size=${RAM_AMOUNT},mem-path=/dev/shm,share=on"
+    MACHINE_EXTRA_FLAGS+=",memory-backend=mem"
 fi
 
 # Check for headless mode
