@@ -4,7 +4,7 @@
 ########################################
 
 # Virtual machine parameters
-RAM_AMOUNT_MB=2048
+RAM_AMOUNT="2048M"
 CPU_CORE_COUNT=2
 BASE_DISK_FILE="base-disk.qcow2" # Backing file for the main image
 PORT_FORWARDS="tcp::8888-:8080"  # List of portforwards in the Qemu format separated by spaces (TLDR: tcp/udp::HOST-:GUEST)
@@ -252,7 +252,7 @@ if [[ "${SHARED_FOLDER}" != "" ]]; then
 
     QEMU_EXTRA_PARAMETERS+=" -chardev socket,id=virtiofs0,path=${VIRTIOFS_SOCKET} "
     QEMU_EXTRA_PARAMETERS+=" -device vhost-user-fs-pci,queue-size=1024,chardev=virtiofs0,tag=myfs "
-    MEMORY_EXTRA_FLAGS+="-object memory-backend-file,id=mem,size=${RAM_AMOUNT_MB}M,mem-path=/dev/shm,share=on -numa node,memdev=mem"
+    MEMORY_EXTRA_FLAGS+="-object memory-backend-file,id=mem,size=${RAM_AMOUNT},mem-path=/dev/shm,share=on -numa node,memdev=mem"
 fi
 
 # Check for headless mode
@@ -279,7 +279,7 @@ ${QEMU_WRAPPER} ${QEMU_EXECUTABLE} \
   -enable-kvm \
   -machine accel=kvm${MACHINE_EXTRA_FLAGS} \
   -smp cores=${CPU_CORE_COUNT},threads=1,sockets=1 \
-  -m ${RAM_AMOUNT_MB} ${MEMORY_EXTRA_FLAGS}\
+  -m ${RAM_AMOUNT} ${MEMORY_EXTRA_FLAGS}\
   -cpu host${CPU_EXTRA_FLAGS} \
   -net nic,model=virtio \
   -net user${PORT_FORWARD_PARAMS} \
