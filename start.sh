@@ -33,6 +33,7 @@ MACHINE_EXTRA_FLAGS=""
 MEMORY_EXTRA_FLAGS=""
 QEMU_WRAPPER=""
 DISPLAY_TYPE="spice-app,gl=on"
+VIRTIOFS_SOCKET_NAME="sock-virtiofs"
 
 # Source the config file
 if [[ -f "${EXT_CONFIG_FILE}"  ]]; then
@@ -241,7 +242,7 @@ fi
 
 # Process shared folders
 if [[ "${SHARED_FOLDER}" != "" ]]; then
-    VIRTIOFS_SOCKET="$(dirname ${0})/sock-virtiofs"
+    VIRTIOFS_SOCKET="$(dirname ${0})/${VIRTIOFS_SOCKET_NAME}"
 
     sudo ${QEMU_VIRTIOFSD} --socket-path="${VIRTIOFS_SOCKET}" -o source="${SHARED_FOLDER}" &
     VIRTIOFS_PID="$!"
