@@ -279,6 +279,7 @@ fi
 # Run the virtual machine
 ${QEMU_WRAPPER} ${QEMU_EXECUTABLE} \
   -enable-kvm \
+  -no-hpet \
   -machine accel=kvm${MACHINE_EXTRA_FLAGS} \
   -smp cores=${CPU_CORE_COUNT},threads=1,sockets=1 \
   -m size=${RAM_AMOUNT},maxmem=${RAM_AMOUNT_MAX} ${MEMORY_EXTRA_FLAGS} \
