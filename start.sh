@@ -5,6 +5,7 @@
 
 # Virtual machine parameters
 RAM_AMOUNT="2048M"
+RAM_AMOUNT_MAX="${RAM_AMOUNT}"
 CPU_CORE_COUNT=2
 BASE_DISK_FILE="base-disk.qcow2" # Backing file for the main image
 PORT_FORWARDS="tcp::8888-:8080"  # List of portforwards in the Qemu format separated by spaces (TLDR: tcp/udp::HOST-:GUEST)
@@ -279,7 +280,7 @@ ${QEMU_WRAPPER} ${QEMU_EXECUTABLE} \
   -enable-kvm \
   -machine accel=kvm${MACHINE_EXTRA_FLAGS} \
   -smp cores=${CPU_CORE_COUNT},threads=1,sockets=1 \
-  -m ${RAM_AMOUNT} ${MEMORY_EXTRA_FLAGS}\
+  -m size=${RAM_AMOUNT},maxmem=${RAM_AMOUNT_MAX} ${MEMORY_EXTRA_FLAGS} \
   -cpu host${CPU_EXTRA_FLAGS} \
   -net nic,model=virtio \
   -net user${PORT_FORWARD_PARAMS} \
