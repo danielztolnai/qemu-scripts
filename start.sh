@@ -43,7 +43,7 @@ fi
 
 # Functions
 function usage() {
-    echo "Initialization: ${0} init SIZE_IN_GB" >&2
+    echo "Initialization: ${0} init SIZE_IN_GB [--nocow]" >&2
     echo "Usage: ${0} NAME {cdrom FILE|snapshot|info|create}" >&2
     exit 1
 }
@@ -91,7 +91,11 @@ if ! [[ -z "${1}" ]]; then
         # Initialize virtual machine
         init)
             if ! [[ -f "${BASE_DISK_FILE}" ]]; then
-                ${QEMU_IMG} create -f qcow2 -o cluster_size=2M "${BASE_DISK_FILE}" "${2}G"
+                QEMU_IMG_OPTIONS="cluster_size=2M"
+                if [[ "${3}" = "--nocow" ]]; then
+                    QEMU_IMG_OPTIONS+=",nocow=on"
+                fi
+                ${QEMU_IMG} create -f qcow2 -o "$QEMU_IMG_OPTIONS" "${BASE_DISK_FILE}" "${2}G"
                 exit "${?}"
             else
                 echo "Base disk file ${BASE_DISK_FILE} already exists"
