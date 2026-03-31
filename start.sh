@@ -248,7 +248,7 @@ fi
 if [[ "${SHARED_FOLDER}" != "" ]]; then
     VIRTIOFS_SOCKET="$(dirname ${0})/${VIRTIOFS_SOCKET_NAME}"
 
-    sudo ${QEMU_VIRTIOFSD} --socket-path="${VIRTIOFS_SOCKET}" -o source="${SHARED_FOLDER}" &
+    sudo ${QEMU_VIRTIOFSD} --socket-path "${VIRTIOFS_SOCKET}" --shared-dir "${SHARED_FOLDER}" &
     VIRTIOFS_PID="$!"
     while ! pgrep -P "${VIRTIOFS_PID}" > /dev/null; do
         sleep 0.5
